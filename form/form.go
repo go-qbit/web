@@ -69,6 +69,10 @@ func (f *Form) ProcessForm(ctx context.Context, w io.Writer) {
 	f.impl.RenderHTML(ctx, w, f)
 }
 
+func (f *Form) GetFields() []field.IField {
+	return f.fields
+}
+
 func (f *Form) GetField(name string) field.IField {
 	if f.fieldsMap == nil {
 		f.fieldsMap = make(map[string]field.IField, len(f.fields))
@@ -78,6 +82,10 @@ func (f *Form) GetField(name string) field.IField {
 	}
 
 	return f.fieldsMap[name]
+}
+
+func (f *Form) GetSubmitCaption(ctx context.Context) string {
+	return f.impl.GetSubmitCaption(ctx)
 }
 
 func (f *Form) GetStringValue(name string) string {

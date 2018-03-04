@@ -3,9 +3,8 @@ package field
 
 import (
 	"context"
-	"net/url"
-
 	"io"
+	"net/url"
 
 	"github.com/go-qbit/qerror"
 )
@@ -16,6 +15,7 @@ type IField interface {
 	GetValue() interface{}
 	GetStringValue() string
 	ProcessField(context.Context, io.Writer)
+	SetError(error)
 }
 
 type Field struct {
@@ -29,4 +29,8 @@ var ErrMissedReqField = qerror.Errorf("Обязательное поле")
 
 func (f *Field) GetName() string {
 	return f.Name
+}
+
+func (f *Field) SetError(err error) {
+	f.LastError = err
 }
