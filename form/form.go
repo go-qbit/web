@@ -88,6 +88,15 @@ func (f *Form) GetSubmitCaption(ctx context.Context) string {
 	return f.impl.GetSubmitCaption(ctx)
 }
 
+func (f *Form) GetValue(name string) interface{} {
+	field := f.GetField(name)
+	if field != nil {
+		return field.GetValue()
+	}
+
+	return nil
+}
+
 func (f *Form) GetStringValue(name string) string {
 	field := f.GetField(name)
 	if field != nil {
