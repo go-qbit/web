@@ -26,3 +26,7 @@ func Error(w http.ResponseWriter, err error) {
 		http.Error(w, message, http.StatusInternalServerError)
 	}
 }
+
+func StdError(w http.ResponseWriter, code int) {
+	http.Error(w, http.StatusText(code), code)
+}
