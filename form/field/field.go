@@ -10,27 +10,27 @@ import (
 )
 
 type IField interface {
-	Process(context.Context, url.Values) error
+	Process(context.Context, url.Values) qerror.PublicError
 	GetName() string
 	GetValue() interface{}
 	GetStringValue() string
 	ProcessField(context.Context, io.Writer)
-	SetError(error)
+	SetError(qerror.PublicError) qerror.PublicError
 }
 
 type Field struct {
 	Name      string
 	Caption   string
 	Required  bool
-	LastError error
+	LastError qerror.PublicError
 }
-
-var ErrMissedReqField = qerror.Errorf("Обязательное поле")
 
 func (f *Field) GetName() string {
 	return f.Name
 }
 
-func (f *Field) SetError(err error) {
+func (f *Field) SetError(err qerror.PublicError) qerror.PublicError {
 	f.LastError = err
+
+	return f.LastError
 }

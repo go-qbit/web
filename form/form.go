@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 
+	"github.com/go-qbit/qerror"
 	"github.com/go-qbit/web/form/field"
 )
 
@@ -13,13 +14,13 @@ type IFormImplementation interface {
 	GetFields() []field.IField
 	GetSubmitCaption(context.Context) string
 	RenderHTML(context.Context, io.Writer, *Form)
-	OnSave(context.Context, http.ResponseWriter, *Form) error
+	OnSave(context.Context, http.ResponseWriter, *Form) qerror.PublicError
 	OnComplete(context.Context, http.ResponseWriter, *http.Request)
 }
 
 type Form struct {
 	UsePost   bool
-	LastError error
+	LastError qerror.PublicError
 	impl      IFormImplementation
 	fields    []field.IField
 	fieldsMap map[string]field.IField
@@ -54,7 +55,7 @@ func (f *Form) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if !hasFieldsErrors {
-			f.LastError = f.impl.OnSave(r.Context(), w, f)
+			f.LastError = qerror.ToPublic(f.impl.OnSave(r.Context(), w, f), "Internal server error")
 			if f.LastError == nil {
 				f.impl.OnComplete(r.Context(), w, r)
 				return
