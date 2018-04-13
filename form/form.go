@@ -55,7 +55,7 @@ func (f *Form) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if !hasFieldsErrors {
-			f.LastError = qerror.ToPublic(f.impl.OnSave(r.Context(), w, f), "Internal server error")
+			f.LastError = f.impl.OnSave(r.Context(), w, f)
 			if f.LastError == nil {
 				f.impl.OnComplete(r.Context(), w, r)
 				return
