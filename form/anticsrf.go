@@ -18,56 +18,54 @@ const (
 )
 
 var (
-	salt      string
-	length    int
-	ctxParser func(ctx context.Context) (userID uint32, formPath string) = nil
+	config IAntiCSRFConfig
 
 	errNotInitialized = errors.New("Please call InitAntiCSRF() first to get your web forms protected and working well")
 	errInvalidToken   = errors.New("Invalid anti-CSRF token")
 	errEmptyParams    = errors.New("Empty init params must be not empty")
-
-	ErrTextInvalidToken = "Ключ формы устарел, попробуйте обновить страницу"
 )
 
-func InitAntiCSRF(tokenSalt string, tokenLength int, f func(ctx context.Context) (userID uint32, formPath string)) error {
-	if tokenSalt == "" || tokenLength == 0 || f == nil {
-		return errEmptyParams
-	}
-	if salt != "" {
-		log.Println("AntiCSRF seems already initialized and you called Init() twice")
+func InitAntiCSRF(c IAntiCSRFConfig) error {
+	if config != nil && c.GetTokenSalt() != "" {
+		log.Println("AntiCSRF seems already initialized and you called InitAntiCSRF() twice")
 		return nil
 	}
+	if c == nil || c.GetTokenSalt() == "" || c.GetTokenLength() == 0 || c.GetCtxParser() == nil {
+		return errEmptyParams
+	}
 
-	salt = tokenSalt
-	length = tokenLength
-	ctxParser = f
+	config = c
 
 	return nil
 }
 
 func GenerateToken(userID uint32, formPath string, prevHour bool) string {
+	if config == nil || config.GetTokenSalt() == "" || config.GetCtxParser() == nil {
+		return ""
+	}
+
 	dt := time.Now().UTC()
 	if prevHour {
 		dt = dt.Add(-1 * lifetime)
 	}
 
-	row := fmt.Sprintf("%s%s%s%d", salt, dt.Format(timeFormat), formPath, userID)
+	row := fmt.Sprintf("%s%s%s%d", config.GetTokenSalt(), dt.Format(timeFormat), formPath, userID)
 
 	hasher := md5.New()
 	hasher.Write([]byte(row))
 
-	return hex.EncodeToString(hasher.Sum(nil)[:length])
+	return hex.EncodeToString(hasher.Sum(nil)[:config.GetTokenLength()])
 }
 
 func checkToken(ctx context.Context, token string) error {
-	if salt == "" || ctxParser == nil {
+	if config == nil || config.GetTokenSalt() == "" || config.GetCtxParser() == nil {
 		return errNotInitialized
 	}
 	if token == "" {
 		return errInvalidToken
 	}
 
-	userID, formPath := ctxParser(ctx)
+	userID, formPath := config.GetCtxParser()(ctx)
 	t := GenerateToken(userID, formPath, false)
 	if t == token {
 		return nil
@@ -78,4 +76,12 @@ func checkToken(ctx context.Context, token string) error {
 	}
 
 	return errInvalidToken
+}
+
+func getAntiCSRFErrorText() string {
+	if config == nil {
+		return "Form token is invalid"
+	}
+
+	return config.GetErrorText()
 }

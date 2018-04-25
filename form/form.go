@@ -46,7 +46,7 @@ func (f *Form) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	if r.Form.Get("save") != "" {
 		if err := checkToken(r.Context(), r.Form.Get(AntiCSRFInputName)); err != nil {
-			f.LastError = qerror.ToPublic(err, ErrTextInvalidToken)
+			f.LastError = qerror.ToPublic(err, getAntiCSRFErrorText())
 			f.impl.RenderHTML(r.Context(), w, f)
 
 			return
