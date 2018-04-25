@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-const AntiCSRFInputName = "anti_csrf_token"
+const AntiCSRFInputName = "save"
 
 const (
 	lifetime   = time.Hour * 1
@@ -39,9 +39,13 @@ func InitAntiCSRF(c IAntiCSRFConfig) error {
 	return nil
 }
 
-func GenerateToken(userID uint32, formPath string, prevHour bool) string {
+func GenerateToken(userID uint32, formPath string) string {
+	return generateToken(userID, formPath, false)
+}
+
+func generateToken(userID uint32, formPath string, prevHour bool) string {
 	if config == nil || config.GetTokenSalt() == "" || config.GetCtxParser() == nil {
-		return ""
+		panic(errNotInitialized)
 	}
 
 	dt := time.Now().UTC()
@@ -59,18 +63,18 @@ func GenerateToken(userID uint32, formPath string, prevHour bool) string {
 
 func checkToken(ctx context.Context, token string) error {
 	if config == nil || config.GetTokenSalt() == "" || config.GetCtxParser() == nil {
-		return errNotInitialized
+		panic(errNotInitialized)
 	}
 	if token == "" {
 		return errInvalidToken
 	}
 
 	userID, formPath := config.GetCtxParser()(ctx)
-	t := GenerateToken(userID, formPath, false)
+	t := generateToken(userID, formPath, false)
 	if t == token {
 		return nil
 	}
-	t = GenerateToken(userID, formPath, true)
+	t = generateToken(userID, formPath, true)
 	if t == token {
 		return nil
 	}
@@ -80,7 +84,7 @@ func checkToken(ctx context.Context, token string) error {
 
 func getAntiCSRFErrorText() string {
 	if config == nil {
-		return "Form token is invalid"
+		panic(errNotInitialized)
 	}
 
 	return config.GetErrorText()
