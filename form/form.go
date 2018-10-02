@@ -11,11 +11,11 @@ import (
 )
 
 type IFormImplementation interface {
-	GetFields() []field.IField
-	GetSubmitCaption(context.Context) string
-	RenderHTML(context.Context, io.Writer, *Form)
-	OnSave(context.Context, http.ResponseWriter, *Form) qerror.PublicError
-	OnComplete(context.Context, http.ResponseWriter, *http.Request)
+	GetFields(ctx context.Context) []field.IField
+	GetSubmitCaption(ctx context.Context) string
+	RenderHTML(ctx context.Context, w io.Writer, f *Form)
+	OnSave(ctx context.Context, w http.ResponseWriter, f *Form) qerror.PublicError
+	OnComplete(ctx context.Context, w http.ResponseWriter, r *http.Request)
 }
 
 type Form struct {
@@ -26,10 +26,10 @@ type Form struct {
 	fieldsMap map[string]field.IField
 }
 
-func New(impl IFormImplementation) *Form {
+func New(ctx context.Context, impl IFormImplementation) *Form {
 	return &Form{
 		impl:   impl,
-		fields: impl.GetFields(),
+		fields: impl.GetFields(ctx),
 	}
 }
 
