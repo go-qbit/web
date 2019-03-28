@@ -10,27 +10,15 @@ import (
 )
 
 type IField interface {
-	Process(context.Context, url.Values) qerror.PublicError
 	GetName() string
+	Init(ctx context.Context, form url.Values)
 	GetValue() interface{}
 	GetStringValue() string
-	ProcessField(context.Context, io.Writer)
-	SetError(qerror.PublicError) qerror.PublicError
+	Check(ctx context.Context) qerror.PublicError
+	ProcessHtml(ctx context.Context, w io.Writer)
+	SetError(err qerror.PublicError) qerror.PublicError
 }
 
-type Field struct {
-	Name      string
-	Caption   string
-	Required  bool
-	LastError qerror.PublicError
-}
-
-func (f *Field) GetName() string {
-	return f.Name
-}
-
-func (f *Field) SetError(err qerror.PublicError) qerror.PublicError {
-	f.LastError = err
-
-	return f.LastError
+var ErrMissedReqField = func(ctx context.Context) qerror.PublicError {
+	return qerror.PublicErrorf("Field is required")
 }

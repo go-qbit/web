@@ -8,10 +8,12 @@ import (
 
 	"github.com/go-qbit/qerror"
 	"github.com/go-qbit/web/form/field"
+	"github.com/go-qbit/web/formctx"
 )
 
 type IFormImplementation interface {
 	GetFields(ctx context.Context) []field.IField
+	GetCaption(ctx context.Context) string
 	GetSubmitCaption(ctx context.Context) string
 	RenderHTML(ctx context.Context, w io.Writer, f *Form)
 	OnSave(ctx context.Context, w http.ResponseWriter, f *Form) qerror.PublicError
@@ -44,10 +46,16 @@ func (f *Form) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	ctx := formctx.WithFormData(r.Context())
+
+	for _, field := range f.fields {
+		field.Init(ctx, r.Form)
+	}
+
 	if inputValue := r.Form.Get(AntiCSRFInputName); inputValue != "" {
-		if err := checkToken(r.Context(), inputValue); err != nil {
+		if err := checkToken(ctx, inputValue); err != nil {
 			f.LastError = qerror.ToPublic(err, getAntiCSRFErrorText())
-			f.impl.RenderHTML(r.Context(), w, f)
+			f.impl.RenderHTML(ctx, w, f)
 
 			return
 		}
@@ -56,21 +64,21 @@ func (f *Form) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 		hasFieldsErrors := false
 		for _, field := range f.fields {
-			if field.Process(r.Context(), r.Form) != nil {
+			if field.Check(ctx) != nil {
 				hasFieldsErrors = true
 			}
 		}
 
 		if !hasFieldsErrors {
-			f.LastError = f.impl.OnSave(r.Context(), w, f)
+			f.LastError = f.impl.OnSave(ctx, w, f)
 			if f.LastError == nil {
-				f.impl.OnComplete(r.Context(), w, r)
+				f.impl.OnComplete(ctx, w, r)
 				return
 			}
 		}
 	}
 
-	f.impl.RenderHTML(r.Context(), w, f)
+	f.impl.RenderHTML(ctx, w, f)
 }
 
 func (f *Form) ProcessForm(ctx context.Context, w io.Writer) {
@@ -90,6 +98,10 @@ func (f *Form) GetField(name string) field.IField {
 	}
 
 	return f.fieldsMap[name]
+}
+
+func (f *Form) GetCaption(ctx context.Context) string {
+	return f.impl.GetCaption(ctx)
 }
 
 func (f *Form) GetSubmitCaption(ctx context.Context) string {
@@ -112,4 +124,14 @@ func (f *Form) GetStringValue(name string) string {
 	}
 
 	return ""
+}
+
+func (f *Form) GetAntiCSRFToken(ctx context.Context) string {
+	if config == nil || config.GetTokenSalt() == "" || config.GetCtxParser() == nil {
+		panic(errNotInitialized)
+	}
+
+	userID, formPath := config.GetCtxParser()(ctx)
+
+	return GenerateToken(userID, formPath)
 }

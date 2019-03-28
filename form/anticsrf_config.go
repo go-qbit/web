@@ -6,14 +6,14 @@ type IAntiCSRFConfig interface {
 	GetTokenSalt() string
 	GetTokenLength() int
 	GetErrorText() string
-	GetCtxParser() func(ctx context.Context) (userID uint32, formPath string)
+	GetCtxParser() func(ctx context.Context) (userID string, formPath string)
 }
 
 type AntiCSRFConfig struct {
 	Salt      string
 	Length    int
 	ErrorText string
-	CtxParser func(ctx context.Context) (userID uint32, formPath string)
+	CtxParser func(ctx context.Context) (userID string, formPath string)
 }
 
 func (c *AntiCSRFConfig) GetTokenSalt() string {
@@ -28,6 +28,6 @@ func (c *AntiCSRFConfig) GetErrorText() string {
 	return c.ErrorText
 }
 
-func (c *AntiCSRFConfig) GetCtxParser() func(ctx context.Context) (userID uint32, formPath string) {
+func (c *AntiCSRFConfig) GetCtxParser() func(ctx context.Context) (userID string, formPath string) {
 	return c.CtxParser
 }

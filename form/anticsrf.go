@@ -39,11 +39,11 @@ func InitAntiCSRF(c IAntiCSRFConfig) error {
 	return nil
 }
 
-func GenerateToken(userID uint32, formPath string) string {
+func GenerateToken(userID string, formPath string) string {
 	return generateToken(userID, formPath, false)
 }
 
-func generateToken(userID uint32, formPath string, prevHour bool) string {
+func generateToken(userID string, formPath string, prevHour bool) string {
 	if config == nil || config.GetTokenSalt() == "" || config.GetCtxParser() == nil {
 		panic(errNotInitialized)
 	}
@@ -53,7 +53,7 @@ func generateToken(userID uint32, formPath string, prevHour bool) string {
 		dt = dt.Add(-1 * lifetime)
 	}
 
-	row := fmt.Sprintf("%s%s%s%d", config.GetTokenSalt(), dt.Format(timeFormat), formPath, userID)
+	row := fmt.Sprintf("%s%s%s%s", config.GetTokenSalt(), dt.Format(timeFormat), formPath, userID)
 
 	hasher := md5.New()
 	hasher.Write([]byte(row))
