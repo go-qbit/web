@@ -64,7 +64,8 @@ func (f *Form) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 		hasFieldsErrors := false
 		for _, field := range f.fields {
-			if field.Check(ctx) != nil {
+			if err := field.Check(ctx); err != nil {
+				field.SetError(err)
 				hasFieldsErrors = true
 			}
 		}
